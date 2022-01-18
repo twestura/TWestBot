@@ -1,0 +1,26 @@
+{
+  "name": "twestbot",
+  "version": "0.0.1",
+  "description": "T-West Twitch chat bot.",
+  "main": "build/index.js",
+  "author": "T-West",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^14.2.0",
+    "tmi.js": "^1.8.5"
+  },
+  "devDependencies": {
+    "@types/tmi.js": "^1.8.1",
+    "@typescript-eslint/eslint-plugin": "^5.10.0",
+    "@typescript-eslint/parser": "^5.10.0",
+    "eslint": "^8.7.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.25.4",
+    "eslint-plugin-prettier": "^4.0.0",
+    "prettier": "^2.5.1",
+    "typescript": "^4.5.4"
+  },
+  "scripts": {
+    "start": "node ."
+  }
+}
