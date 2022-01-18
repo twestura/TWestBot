@@ -14,5 +14,12 @@
   ],
   "rules": {
     "prettier/prettier": "warn"
+  },
+  "settings": {
+    "import/resolver": {
+      "node": {
+        "extensions": [".js", ".ts"]
+      }
+    }
   }
 }

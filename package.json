@@ -10,6 +10,7 @@
     "tmi.js": "^1.8.5"
   },
   "devDependencies": {
+    "@types/node": "^17.0.9",
     "@types/tmi.js": "^1.8.1",
     "@typescript-eslint/eslint-plugin": "^5.10.0",
     "@typescript-eslint/parser": "^5.10.0",

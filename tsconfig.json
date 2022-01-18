@@ -3,8 +3,9 @@
     "node_modules",
   ],
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
+    "target": "ES5",
+    "module": "CommonJS",
+    "moduleResolution": "node",
     "sourceMap": true,
     "rootDir": "src",
     "outDir": "build",
