@@ -149,7 +149,6 @@ const create_bot: (env: EnvValues) => void = () => {
     if (self) return;
     const cmd = parse_command(message.toLowerCase());
     if (cmd === undefined) return;
-    // TODO finish switch statement
     switch (cmd.prefix) {
       case "commands":
         client.say(channel, list_commands());
