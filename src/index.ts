@@ -96,12 +96,6 @@ const parse_command: (s: string) => Cmd | undefined = (s) => {
 const list_commands: () => string = () =>
   command_names.map((s) => `!${s}`).join(" ");
 
-/** Returns the text of fetching the url given by `url`. */
-const fetch_url: (url: string) => Promise<string> = async (url) => {
-  const response = await fetch(url);
-  return response.text();
-};
-
 /**
  * Creates the chat bot, sets up event handlers, and logs the bot into Twitch.
  * The bot is active in the chat upon completion of this function.
@@ -120,29 +114,24 @@ const create_bot: (env: EnvValues) => void = () => {
 
   const id_steam = env.id_steam as string;
 
-  // TODO refactor this code
-  const fetch_civs: (arg: string) => Promise<string> = async (arg: string) => {
+  /**
+   * Returns the text body of a query to the aoe2.net api.
+   *
+   * `component` is the component of the url containing the parameters for
+   * the query, except for the details of the specific player whose data is
+   * looked up.
+   *
+   * If `arg` is given, searches for that player. Otherwise searches for my
+   * data using my Steam id.
+   */
+  const fetch_url: (component: string, arg: string) => Promise<string> = async (
+    component,
+    arg
+  ) => {
     const query = arg === "" ? `steam_id=${id_steam}` : `search=${arg}`;
-    const url = `https://aoe2.net/api/nightbot/civs?${query}`;
-    return fetch_url(url);
-  };
-
-  const fetch_elo: (arg: string) => Promise<string> = async (arg: string) => {
-    const query = arg === "" ? `steam_id=${id_steam}` : `search=${arg}`;
-    const url = `https://aoe2.net/api/nightbot/rank?leaderboard_id=3&flag=false&${query}`;
-    return fetch_url(url);
-  };
-
-  const fetch_map: (arg: string) => Promise<string> = async (arg: string) => {
-    const query = arg === "" ? `steam_id=${id_steam}` : `search=${arg}`;
-    const url = `https://aoe2.net/api/nightbot/map?${query}`;
-    return fetch_url(url);
-  };
-
-  const fetch_match: (arg: string) => Promise<string> = async (arg: string) => {
-    const query = arg === "" ? `steam_id=${id_steam}` : `search=${arg}`;
-    const url = `https://aoe2.net/api/nightbot/match?&color=true&flag=false&${query}`;
-    return fetch_url(url);
+    const url = `https://aoe2.net/api/nightbot/${component}${query}`;
+    const response = await fetch(url);
+    return response.text();
   };
 
   client.on("message", async (channel, tags, message, self) => {
@@ -154,16 +143,19 @@ const create_bot: (env: EnvValues) => void = () => {
         client.say(channel, list_commands());
         break;
       case "civs":
-        client.say(channel, await fetch_civs(cmd.arg));
+        client.say(channel, await fetch_url("civs?", cmd.arg));
         break;
       case "discord":
         client.say(channel, LINK_DISCORD);
         break;
       case "map":
-        client.say(channel, await fetch_map(cmd.arg));
+        client.say(channel, await fetch_url("map?", cmd.arg));
         break;
       case "match":
-        client.say(channel, await fetch_match(cmd.arg));
+        client.say(
+          channel,
+          await fetch_url("match?color=true&flag=false&", cmd.arg)
+        );
         break;
       case "patreon":
         client.say(channel, LINK_PATREON);
@@ -177,7 +169,10 @@ const create_bot: (env: EnvValues) => void = () => {
       case "elo":
       case "rank":
       case "rating":
-        client.say(channel, await fetch_elo(cmd.arg));
+        client.say(
+          channel,
+          await fetch_url("rank?leaderboard_id=3&flag=false&", cmd.arg)
+        );
         break;
       default:
         assert_unreachable(cmd.prefix);
