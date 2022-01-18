@@ -10,10 +10,14 @@ Uses `tmi.js`: [https://www.npmjs.com/package/tmi.js](https://www.npmjs.com/pack
 
 The bot calls commands from the [aoe2.net](https://aoe2.net) [API](https://aoe2.net/#api).
 
-* `commands`
-* `match`
-* `map`
 * `civs`
-* `rank`
+* `commands`
+* `discord`
 * `elo`
+* `map`
+* `match`
+* `patreon`
+* `rank`
 * `rating`
+* `twitter`
+* `youtube`
