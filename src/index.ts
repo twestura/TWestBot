@@ -141,7 +141,7 @@ const create_bot: (env: EnvValues) => void = () => {
 
   const fetch_match: (arg: string) => Promise<string> = async (arg: string) => {
     const query = arg === "" ? `steam_id=${id_steam}` : `search=${arg}`;
-    const url = `https://aoe2.net/api/nightbot/match?&color=false&flag=false&${query}`;
+    const url = `https://aoe2.net/api/nightbot/match?&color=true&flag=false&${query}`;
     return fetch_url(url);
   };
 
