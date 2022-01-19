@@ -21,6 +21,9 @@ const LINK_TWITTER = "twitter.com/TravisWestura";
 /** Link to my YouTube channel. */
 const LINK_YOUTUBE = "youtube.com/TWestYT";
 
+/** The time within which a command cannot be executed multiple times. */
+const COOLDOWN_DELAY = 5000;
+
 /**
  * Utility function to ensure exhaustiveness of switch statements on literal
  * union types.
@@ -110,6 +113,8 @@ const create_bot: (env: EnvValues) => void = () => {
     channels: [env.channel as string],
   };
 
+  const last_execution = new Map();
+
   const client = new Client(options);
 
   const id_steam = env.id_steam as string;
@@ -138,6 +143,15 @@ const create_bot: (env: EnvValues) => void = () => {
     if (self) return;
     const cmd = parse_command(message.toLowerCase());
     if (cmd === undefined) return;
+
+    // Skips the command if called multiple times within a short period of time.
+    if (
+      last_execution.has(cmd.prefix) &&
+      Date.now() - last_execution.get(cmd.prefix) <= COOLDOWN_DELAY
+    )
+      return;
+    last_execution.set(cmd.prefix, Date.now());
+
     switch (cmd.prefix) {
       case "commands":
         client.say(channel, list_commands());
