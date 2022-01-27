@@ -24,6 +24,9 @@ const LINK_YOUTUBE = "youtube.com/TWestYT";
 /** The time within which a command cannot be executed multiple times. */
 const COOLDOWN_DELAY = 5000;
 
+/** Error message to display when an API request fails. */
+const FETCH_ERR_MSG = "aoe2.net is down.";
+
 /**
  * Utility function to ensure exhaustiveness of switch statements on literal
  * union types.
@@ -120,7 +123,8 @@ const create_bot: (env: EnvValues) => void = () => {
   const id_steam = env.id_steam as string;
 
   /**
-   * Returns the text body of a query to the aoe2.net api.
+   * Returns the text body of a query to the aoe2.net api, or an error message
+   * to display in chat if the request does not succeed.
    *
    * `component` is the component of the url containing the parameters for
    * the query, except for the details of the specific player whose data is
@@ -136,7 +140,7 @@ const create_bot: (env: EnvValues) => void = () => {
     const query = arg === "" ? `steam_id=${id_steam}` : `search=${arg}`;
     const url = `https://aoe2.net/api/nightbot/${component}${query}`;
     const response = await fetch(url);
-    return response.text();
+    return response.status === 200 ? response.text() : FETCH_ERR_MSG;
   };
 
   client.on("message", async (channel, tags, message, self) => {
