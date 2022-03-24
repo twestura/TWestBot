@@ -27,6 +27,10 @@ const COOLDOWN_DELAY = 5000;
 /** Error message to display when an API request fails. */
 const FETCH_ERR_MSG = "aoe2.net is down.";
 
+/** Announcement for the Civ Builder tournament. Remove when finished. */
+const ANNOUNCEMENT =
+  "CivBuilder FFA on April 1st: Players make custom civs for Regicide KotH. More info on AoEZone: https://www.aoezone.net/threads/civbuilder-ffa-settings.180473/";
+
 /**
  * Utility function to ensure exhaustiveness of switch statements on literal
  * union types.
@@ -38,6 +42,8 @@ function assert_unreachable(_: never): never {
 
 /** The names of bot commands. Sorted lexicographically. */
 const command_names = [
+  "announcement",
+  "civbuilder",
   "civs",
   "commands",
   "discord",
@@ -139,8 +145,12 @@ const create_bot: (env: EnvValues) => void = () => {
   ) => {
     const query = arg === "" ? `steam_id=${id_steam}` : `search=${arg}`;
     const url = `https://aoe2.net/api/nightbot/${component}${query}`;
-    const response = await fetch(url);
-    return response.status === 200 ? response.text() : FETCH_ERR_MSG;
+    try {
+      const response = await fetch(url);
+      return response.status === 200 ? response.text() : FETCH_ERR_MSG;
+    } catch (_) {
+      return FETCH_ERR_MSG;
+    }
   };
 
   client.on("message", async (channel, tags, message, self) => {
@@ -157,6 +167,10 @@ const create_bot: (env: EnvValues) => void = () => {
     last_execution.set(cmd.prefix, Date.now());
 
     switch (cmd.prefix) {
+      case "announcement":
+      case "civbuilder":
+        client.say(channel, ANNOUNCEMENT);
+        break;
       case "commands":
         client.say(channel, list_commands());
         break;
