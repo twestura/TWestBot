@@ -121,6 +121,16 @@ const parse_command: (s: string) => Cmd | undefined = (s) => {
 const list_commands: () => string = () =>
   command_names.map((s) => `!${s}`).join(" ");
 
+/** Returns a string description of the names of the winners. */
+const winner_msg: (ws: Array<[string, string]>) => string = (ws) => {
+  if (ws.length === 0) return "No entrants.";
+  const ns = ws
+    .map(([_, n]) => n)
+    .sort()
+    .join(", ");
+  return ws.length === 1 ? `The winner is: ${ns}` : `The winners are: ${ns}`;
+};
+
 /**
  * Creates the chat bot, sets up event handlers, and logs the bot into Twitch.
  * The bot is active in the chat upon completion of this function.
@@ -194,7 +204,6 @@ const create_bot: (env: EnvValues) => void = () => {
    */
   const draw_winners: (n: number) => Array<[string, string]> = (n) => {
     const names = [...entrants.entries()];
-    if (n < entrants.size) return names;
     // names[i+1..] is randomized.
     for (let i = names.length - 1; i > 0; --i) {
       const j = rand_int(0, i);
@@ -203,7 +212,7 @@ const create_bot: (env: EnvValues) => void = () => {
       names[j] = names[i];
       names[i] = t;
     }
-    return names.slice(0, n);
+    return names.slice(0, Math.min(n, names.length));
   };
 
   /**
@@ -240,9 +249,12 @@ const create_bot: (env: EnvValues) => void = () => {
     // Skips the command if called multiple times within a short period of time.
     if (
       last_execution.has(cmd.prefix) &&
+      cmd.prefix !== "enter" &&
       Date.now() - last_execution.get(cmd.prefix) <= COOLDOWN_DELAY
-    )
+    ) {
+      console.log(`Command ${cmd.prefix} on cooldown.`);
       return;
+    }
     last_execution.set(cmd.prefix, Date.now());
 
     switch (cmd.prefix) {
@@ -262,18 +274,9 @@ const create_bot: (env: EnvValues) => void = () => {
           console.log(`${n} is not a valid number of winners.`);
           break;
         }
-
         const winners = draw_winners(n);
-        console.log(`winners: ${winners}`);
-        const win_str = [...winners.map(([_, name]) => name)].toString();
-        client.say(
-          channel,
-          winners.length === 0
-            ? "No entrants."
-            : winners.length === 1
-            ? `The winner is: ${win_str}`
-            : `The winners are: ${win_str}`
-        );
+        console.log(`winners: ${winners}`); // Log twitch IDs to console.
+        client.say(channel, winner_msg(winners));
         break;
       case "enter":
         if (!is_giveaway_live) break;
