@@ -25,7 +25,10 @@ export type EnvValues = {
    */
   channel: string;
 
-  /** The id of my steam account. */
+  /** The id of my Twitch account. */
+  id_twitch: string;
+
+  /** The id of my Steam account. */
   id_steam: string;
 };
 
@@ -47,6 +50,12 @@ const load_channel: () => Result<string, string> = () => {
   return channel !== undefined ? ok(channel) : err("Cannot load channel.");
 };
 
+/** Returns my Twitch account ID number. */
+const load_twitch: () => Result<string, string> = () => {
+  const twitch = process.env.ID_TWITCH;
+  return twitch !== undefined ? ok(twitch) : err("Cannot load Twitch ID.");
+};
+
 /** Returns my Steam id number. */
 const load_steam: () => Result<string, string> = () => {
   const steam = process.env.ID_STEAM;
@@ -58,13 +67,15 @@ export const load_env: () => Result<EnvValues, Array<string>> = () => {
   const name = load_username();
   const pw = load_password();
   const channel = load_channel();
+  const twitch = load_twitch();
   const steam = load_steam();
 
-  if (name.ok && pw.ok && channel.ok && steam.ok)
+  if (name.ok && pw.ok && channel.ok && twitch.ok && steam.ok)
     return ok({
       id_username: name.val,
       id_password: pw.val,
       channel: channel.val,
+      id_twitch: twitch.val,
       id_steam: steam.val,
     });
 
@@ -72,6 +83,7 @@ export const load_env: () => Result<EnvValues, Array<string>> = () => {
   if (!name.ok) errors.push(name.err);
   if (!pw.ok) errors.push(pw.err);
   if (!channel.ok) errors.push(channel.err);
+  if (!twitch.ok) errors.push(twitch.err);
   if (!steam.ok) errors.push(steam.err);
   return err(errors);
 };

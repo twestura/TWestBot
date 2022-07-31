@@ -3,9 +3,12 @@
 // TODO fix project settings so don't need the `.js` and unresolved error
 // ignores.
 
+import { exists, fstat } from "fs";
 import fetch from "node-fetch";
 import { env } from "process";
 import { Client } from "tmi.js";
+import { appendFileSync, existsSync, readFileSync } from "fs";
+import { rand_int } from "./rand.js";
 // eslint-disable-next-line import/no-unresolved
 import { EnvValues, load_env } from "./load_env.js";
 
@@ -27,6 +30,16 @@ const COOLDOWN_DELAY = 5000;
 /** Error message to display when an API request fails. */
 const FETCH_ERR_MSG = "aoe2.net is down.";
 
+/** Message for RMSC2. */
+const RMSC2 =
+  "RMS Cup 2 is happening in July, $24k prizepool sponsored by Microsoft. Organized and hosted by Nova, Ornlu, and sieste: https://www.twitch.tv/novaaoe https://www.twitch.tv/OrnLu_AoE https://www.twitch.tv/multiples_siestes All info on Discord: https://discord.gg/bD9mABVmms";
+
+/** File path to the entrants for the current giveaway. */
+const GIVEAWAY_FILE = "resources/giveaway.csv";
+
+/** Describes the giveaway and how to enter. */
+const GIVEAWAY_MSG = "<giveaway description here>. Type !enter to enter.";
+
 /**
  * Utility function to ensure exhaustiveness of switch statements on literal
  * union types.
@@ -41,12 +54,18 @@ const command_names = [
   "civs",
   "commands",
   "discord",
+  "draw",
   "elo",
+  "enter",
+  "giveaway",
   "map",
   "match",
   "patreon",
   "rank",
   "rating",
+  "rmsc2",
+  "start",
+  "stop",
   "twitter",
   "youtube",
 ] as const;
@@ -107,6 +126,10 @@ const list_commands: () => string = () =>
  * The bot is active in the chat upon completion of this function.
  */
 const create_bot: (env: EnvValues) => void = () => {
+  /** `true` if a giveaway may have new entrants added, `false` if not. */
+  let is_giveaway_live = false;
+
+  /** Client options. */
   const options = {
     options: { debug: true },
     identity: {
@@ -116,11 +139,72 @@ const create_bot: (env: EnvValues) => void = () => {
     channels: [env.channel as string],
   };
 
-  const last_execution = new Map();
-
+  /** `tmi.js` client. */
   const client = new Client(options);
 
+  /**
+   * Maps each command prefix to the last time it was executed.
+   * A prefix is not in the map if it has not been executed while the bot
+   * is active.
+   */
+  const last_execution = new Map();
+
+  /** My Steam id, for fetching from aoe2.net. */
   const id_steam = env.id_steam as string;
+
+  /**
+   * Entrants in the current giveaway.
+   * Maps a user's Twitch ID to their display name.
+   * The pairs in this map are exactly the same as the rows in the
+   * `GIVEAWAY_FILE` (disregarding order).
+   */
+  const entrants = new Map();
+  // Initialize the list of giveaway entrants, if the file exists.
+  if (existsSync(GIVEAWAY_FILE)) {
+    const file_contents = readFileSync(GIVEAWAY_FILE).toString();
+    const lines = file_contents
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line != "");
+    for (const line of lines) {
+      const [twitch_id, display_name] = line.split(/, /);
+      entrants.set(twitch_id, display_name);
+    }
+  }
+
+  /**
+   * Adds a Twitch user to the giveaway if they are not already entered.
+   * @param twitch_id the id of the user to add, must consist of only digits
+   * @param display_name the user's display name
+   */
+  const add_entrant: (twitch_id: string, display_name: string) => void = (
+    twitch_id,
+    display_name
+  ) => {
+    if (entrants.has(twitch_id)) return;
+    entrants.set(twitch_id, display_name);
+    appendFileSync(GIVEAWAY_FILE, `${twitch_id}, ${display_name}\n`);
+  };
+
+  /**
+   * Draws `n` winners randomly from the giveaway entrants.
+   * If there are fewer than `n` entrants, then all entrants are returned.
+   * @param n the number of winners to draw, must be a nonnegative integer
+   * @returns the `[id, username]` pairs of the winners
+   */
+  const draw_winners: (n: number) => Array<[string, string]> = (n) => {
+    const names = [...entrants.entries()];
+    if (n < entrants.size) return names;
+    // names[i+1..] is randomized.
+    for (let i = names.length - 1; i > 0; --i) {
+      const j = rand_int(0, i);
+      // Swap names[i] and names[j].
+      const t = names[j];
+      names[j] = names[i];
+      names[i] = t;
+    }
+    return names.slice(0, n);
+  };
 
   /**
    * Returns the text body of a query to the aoe2.net api, or an error message
@@ -149,6 +233,7 @@ const create_bot: (env: EnvValues) => void = () => {
 
   client.on("message", async (channel, tags, message, self) => {
     if (self) return;
+
     const cmd = parse_command(message.toLowerCase());
     if (cmd === undefined) return;
 
@@ -170,6 +255,42 @@ const create_bot: (env: EnvValues) => void = () => {
       case "discord":
         client.say(channel, LINK_DISCORD);
         break;
+      case "draw":
+        if (tags["user-id"] != env.id_twitch) break; // Only I may draw.
+        const n = parseInt(cmd.arg);
+        if (isNaN(n) || n <= 0) {
+          console.log(`${n} is not a valid number of winners.`);
+          break;
+        }
+
+        const winners = draw_winners(n);
+        console.log(`winners: ${winners}`);
+        const win_str = [...winners.map(([_, name]) => name)].toString();
+        client.say(
+          channel,
+          winners.length === 0
+            ? "No entrants."
+            : winners.length === 1
+            ? `The winner is: ${win_str}`
+            : `The winners are: ${win_str}`
+        );
+        break;
+      case "enter":
+        if (!is_giveaway_live) break;
+        if (tags["user-id"] !== undefined && tags["display-name"] !== undefined)
+          add_entrant(tags["user-id"], tags["display-name"]);
+        break;
+      case "giveaway":
+        client.say(channel, GIVEAWAY_MSG);
+        break;
+      case "start":
+        if (tags["user-id"] != env.id_twitch) break; // Only I may start.
+        is_giveaway_live = true;
+        break;
+      case "stop":
+        if (tags["user-id"] != env.id_twitch) break; // Only I may stop.
+        is_giveaway_live = false;
+        break;
       case "map":
         client.say(channel, await fetch_url("map?", cmd.arg));
         break;
@@ -181,6 +302,9 @@ const create_bot: (env: EnvValues) => void = () => {
         break;
       case "patreon":
         client.say(channel, LINK_PATREON);
+        break;
+      case "rmsc2":
+        client.say(channel, RMSC2);
         break;
       case "twitter":
         client.say(channel, LINK_TWITTER);

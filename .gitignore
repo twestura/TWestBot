@@ -2,4 +2,5 @@
 .vscode
 build
 node_modules
+resources/giveaway.csv
 yarn-error.log
