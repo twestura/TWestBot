@@ -30,15 +30,12 @@ const COOLDOWN_DELAY = 5000;
 /** Error message to display when an API request fails. */
 const FETCH_ERR_MSG = "aoe2.net is down.";
 
-/** Message for RMSC2. */
-const RMSC2 =
-  "RMS Cup 2 is happening in July, $24k prizepool sponsored by Microsoft. Organized and hosted by Nova, Ornlu, and sieste: https://www.twitch.tv/novaaoe https://www.twitch.tv/OrnLu_AoE https://www.twitch.tv/multiples_siestes All info on Discord: https://discord.gg/bD9mABVmms";
-
 /** File path to the entrants for the current giveaway. */
 const GIVEAWAY_FILE = "resources/giveaway.csv";
 
 /** Describes the giveaway and how to enter. */
-const GIVEAWAY_MSG = "<giveaway description here>. Type !enter to enter.";
+const GIVEAWAY_MSG =
+  "Vitalis is giving away a copy of Aoe 1, 2, or 3 DE or any DLC (your choice). Type !enter to enter.";
 
 /**
  * Utility function to ensure exhaustiveness of switch statements on literal
@@ -51,10 +48,13 @@ function assert_unreachable(_: never): never {
 
 /** The names of bot commands. Sorted lexicographically. */
 const command_names = [
+  "3v3",
   "civs",
   "commands",
+  "double",
   "discord",
   "draw",
+  "donate",
   "elo",
   "enter",
   "giveaway",
@@ -63,7 +63,6 @@ const command_names = [
   "patreon",
   "rank",
   "rating",
-  "rmsc2",
   "start",
   "stop",
   "twitter",
@@ -258,6 +257,21 @@ const create_bot: (env: EnvValues) => void = () => {
     last_execution.set(cmd.prefix, Date.now());
 
     switch (cmd.prefix) {
+      case "3v3":
+        client.say(channel, "Hosted by Akkal: https://www.twitch.tv/akkalno");
+        break;
+      case "double":
+        client.say(
+          channel,
+          "Double Cup 3 is a community-funded multiple-tc start tournament hosted by Huehuecoyotl22, Elhyar & DaisyChain. If you want to contribute to reaching the prize pool goal of $700, you can donate here: streamlabs.com/huehuecoyotl22/tip.More information: liquipedia.net/ageofempires/Double_Cup/3."
+        );
+        break;
+      case "donate":
+        client.say(
+          channel,
+          "Donate to LT's Starlight Fundraiser here: https://donate.tiltify.com/@liltrouble__/wololo-starlight"
+        );
+        break;
       case "commands":
         client.say(channel, list_commands());
         break;
@@ -305,9 +319,6 @@ const create_bot: (env: EnvValues) => void = () => {
         break;
       case "patreon":
         client.say(channel, LINK_PATREON);
-        break;
-      case "rmsc2":
-        client.say(channel, RMSC2);
         break;
       case "twitter":
         client.say(channel, LINK_TWITTER);
