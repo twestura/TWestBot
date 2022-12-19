@@ -259,7 +259,7 @@ const create_bot: (env: EnvValues) => void = () => {
       case "double":
         client.say(
           channel,
-          "Double Cup 3 is a community-funded multiple-tc start tournament hosted by Huehuecoyotl22, Elhyar & DaisyChain. If you want to contribute to reaching the prize pool goal of $700, you can donate here: streamlabs.com/huehuecoyotl22/tip.More information: liquipedia.net/ageofempires/Double_Cup/3."
+          "Double Cup 3 is a community-funded multiple-tc start tournament hosted by Huehuecoyotl22, Elhyar & DaisyChain. If you want to contribute to reaching the prize pool goal of $700, you can donate here: streamlabs.com/huehuecoyotl22/tip More information: liquipedia.net/ageofempires/Double_Cup/3"
         );
         break;
       case "donate":
