@@ -48,7 +48,6 @@ function assert_unreachable(_: never): never {
 
 /** The names of bot commands. Sorted lexicographically. */
 const command_names = [
-  "3v3",
   "civs",
   "commands",
   "double",
@@ -257,9 +256,6 @@ const create_bot: (env: EnvValues) => void = () => {
     last_execution.set(cmd.prefix, Date.now());
 
     switch (cmd.prefix) {
-      case "3v3":
-        client.say(channel, "Hosted by Akkal: https://www.twitch.tv/akkalno");
-        break;
       case "double":
         client.say(
           channel,
